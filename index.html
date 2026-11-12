@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Что тебе сейчас нравится?</title>
+<style>
+:root{font-family:system-ui,sans-serif;color:#030303;background:#F1F1F1;color-scheme:light}*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;min-height:100svh;display:grid;place-items:center;padding:24px;background:radial-gradient(ellipse at 13% 12%,#F2F99C,transparent 45%),radial-gradient(ellipse at 86% 88%,#D1B4F7,transparent 45%),#F1F1F1}main{position:relative;width:min(100%,640px);background:#fffcf8;padding:clamp(24px,6vw,58px);border-radius:32px;box-shadow:0 18px 65px #47337823;border:1px solid #fff}h1,h2{letter-spacing:-.045em;line-height:1.09;margin:18px 0}h1{font-size:clamp(42px,8vw,72px)}h2{font-size:clamp(27px,5vw,43px)}p{line-height:1.55;color:#030303}.mark{display:inline-grid;place-items:center;width:56px;height:56px;border-radius:19px;background:#F2F99C;color:#030303;font-size:28px}.label{font-size:.85rem;font-weight:700;color:#030303}.meta,.actions{display:flex;align-items:center;justify-content:space-between;gap:12px}.actions{margin-top:24px;flex-wrap:wrap}progress{display:block;width:100%;height:7px;border:0;border-radius:8px;margin-top:12px;appearance:none;background:#eee7fa;color:#D1B4F7}progress::-webkit-progress-bar{background:#eee7fa;border-radius:8px}progress::-webkit-progress-value{background:#D1B4F7;border-radius:8px}progress::-moz-progress-bar{background:#D1B4F7;border-radius:8px}button{min-height:46px;border:0;border-radius:14px;padding:10px 20px;background:#D1B4F7;color:#030303;font:inherit;font-weight:700;cursor:pointer}button:hover{background:#F2F99C}button.secondary{color:#030303;background:#F1F1F1}button.secondary:hover{background:#F2F99C}button:disabled{opacity:.55;cursor:wait}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #8e65dd;outline-offset:3px}input,textarea{display:block;width:100%;border:1px solid #b9aacf;background:white;border-radius:14px;padding:14px;font:inherit;color:inherit}textarea{min-height:115px;resize:vertical}.hint{min-height:1.5em;margin:8px 0;font-size:.9rem}.error{color:#9c2654;margin:12px 0 0}
+</style>
+<main>
+<section id="welcome"><span class="mark" aria-hidden="true">✦</span><h1>Что тебе сейчас нравится?</h1><p>Мини-опрос про любимые вещи, привычки и планы. Можно отвечать коротко.</p><button type="button" id="start">Начать</button></section>
+<form id="survey" hidden>
+<div class="meta label"><span id="group"></span><span id="count"></span></div><progress id="progress" max="14" value="1" aria-label="Прогресс анкеты"></progress>
+<h2 id="question"></h2><p class="hint" id="hint"></p><div id="field"></div>
+<div class="actions"><button type="button" class="secondary" id="back">Назад</button><button type="submit" id="next">Дальше</button></div>
+<p id="error" class="error" role="alert" hidden></p>
+</form>
+<section id="thanks" hidden><span class="mark" aria-hidden="true">♡</span><h1 tabindex="-1">Спасибо за ответы!</h1><p>Анкета отправлена.</p></section>
+</main>
+<script>
+const questions = ["Как тебя зовут?","Какой у тебя любимый цвет?","Какой фильм или сериал ты можешь пересматривать?","Какую песню ты сейчас чаще всего включаешь?","Какую еду или напиток ты выбираешь, когда хочешь порадовать себя?","Как выглядит твой идеальный свободный вечер?","Чем ты сейчас увлекаешься или что давно хочется попробовать?","Что ты недавно увидел(а) и подумал(а): «О, это прям моё»?","Что из повседневного ты давно хочешь обновить или заменить, но всё откладываешь?","Что тебе особенно нравится в последнее время?","Если бы завтра освободился весь день, куда бы ты сходил(а) или чем занялся(ась)?","Что нравится многим, а тебе совсем не по душе?","Как тебе дизайн анкеты?","Тебе понравилось проходить анкету?"];
+const hints = {1:"Можно написать несколько цветов.",9:"Например, автор, игра или аромат.",11:"Например, популярный сериал, тренд или блюдо."};
+const formspreeFormId = "meagoaln";
+const get = id => document.getElementById(id);
+const survey = get("survey");
+const answers = questions.map(() => "");
+let step = 0;
+let field;
+function showStep() {
+  get("group").textContent = step < 5 ? "Немного о тебе" : step < 12 ? "А теперь чуть интереснее" : "Пара слов об анкете";
+  get("count").textContent = (step + 1) + " из " + questions.length;
+  get("progress").max = questions.length;
+  get("progress").value = step + 1;
+  get("question").textContent = questions[step];
+  get("hint").textContent = hints[step] || "";
+  get("hint").hidden = !hints[step];
+  get("next").textContent = step === questions.length - 1 ? "Отправить" : "Дальше";
+  get("error").hidden = true;
+  field = document.createElement(step < 5 ? "input" : "textarea");
+  field.setAttribute("aria-labelledby", "question");
+  if (hints[step]) field.setAttribute("aria-describedby", "hint");
+  field.maxLength = step === 0 ? 120 : 1200;
+  field.required = step === 0;
+  field.value = answers[step];
+  field.placeholder = "Твой ответ";
+  field.addEventListener("input", () => field.setCustomValidity(""));
+  get("field").replaceChildren(field);
+  field.focus({preventScroll:true});
+}
+get("start").onclick = () => {
+  get("welcome").hidden = true;
+  survey.hidden = false;
+  showStep();
+};
+get("back").onclick = () => {
+  answers[step] = field.value;
+  if (step > 0) { step--; showStep(); return; }
+  survey.hidden = true;
+  get("welcome").hidden = false;
+  get("start").focus();
+};
+survey.addEventListener("submit", async event => {
+  event.preventDefault();
+  answers[step] = field.value.trim();
+  if (step === 0 && !answers[0]) {
+    field.setCustomValidity("Введи своё имя.");
+    field.reportValidity();
+    return;
+  }
+  if (step < questions.length - 1) { step++; showStep(); return; }
+  const next = get("next");
+  const back = get("back");
+  const error = get("error");
+  next.disabled = back.disabled = field.disabled = true;
+  next.textContent = "Отправляем…";
+  error.hidden = true;
+  try {
+    if (!formspreeFormId) throw new Error("Отправка пока не подключена. Ответы остаются на этой странице.");
+    const payload = Object.fromEntries(questions.map((question, index) => [question, answers[index] || "—"]));
+    const response = await fetch("https://formspree.io/f/" + encodeURIComponent(formspreeFormId), {
+      method:"POST", headers:{"Content-Type":"application/json","Accept":"application/json"}, body:JSON.stringify(payload)
+    });
+    if (!response.ok) throw new Error(response.status === 503
+      ? "Отправка пока не подключена. Ответы остаются на этой странице."
+      : "Не удалось отправить анкету. Попробуй ещё раз.");
+    survey.hidden = true;
+    get("thanks").hidden = false;
+    get("thanks").querySelector("h1").focus();
+  } catch (failure) {
+    error.textContent = failure instanceof TypeError ? "Проверь подключение и попробуй ещё раз." : failure.message;
+    error.hidden = false;
+  } finally {
+    next.disabled = back.disabled = field.disabled = false;
+    next.textContent = "Отправить";
+  }
+});
+</script></html>
